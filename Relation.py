@@ -41,6 +41,9 @@ class Relation:
             else:
                 raise ValueError(f"Unknown input parameter '{key}'")
 
+    def __str__(self):
+        return str(self._symEq)
+
     def setStatic(self, status: bool):
         """ If true, sets this relation to a static relation.
             If false, sets this relation as a non-static relation."""
@@ -157,7 +160,7 @@ class Relation:
         unknownVarPintQty.ito(unknownVarUnits)
 
         # Assign new value to variable
-        unknownList[0].setMag(unknownVarPintQty.magnitude)
+        unknownList[0].setValue(unknownVarPintQty.magnitude)
         unknownList[0].convert_to(unknownVarPintQty.units)
 
         # Print off final value
