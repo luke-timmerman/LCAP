@@ -6,7 +6,7 @@ ureg = UnitRegistry()
 class Variable(sp.Symbol):
     """ Class to contain all the basic information of a variable in the system. Inherits from
         sympy Symbol class so that these variables can be put into sympy expressions"""
-    def __new__(cls, symRep: str, *args, **kwargs):
+    def __new__(cls, symRep: str, units: ureg.Unit, *args, **kwargs):
         """ Input: symRep: string,
                    units: ureg.Unit,
                    mag: int, float,
@@ -17,25 +17,23 @@ class Variable(sp.Symbol):
         obj._magKnown = False
         obj._units = ureg.dimensionless
         obj._unitsKnown = False
+        obj._setUnits(units)
         obj.symbol = symRep
         obj._desc = ""
+
 
         for argIndex in range(len(args)):
             # Check for value input
             if argIndex == 0:
-                obj.setUnits(args[argIndex])
+                obj.setValue(args[argIndex])
             elif argIndex == 1:
-                obj.setMag(args[argIndex])
-            elif argIndex == 2:
                 obj.setDesc(args[argIndex])
             else:
                 raise ValueError("Too many inputs")
 
         for key, val in kwargs.items():
             if key == 'mag':
-                obj.setMag(val)
-            elif key == 'units':
-                obj.setUnits(val)
+                obj.setValue(val)
             elif key == 'desc':
                 obj.setDesc(val)
             else:
@@ -53,27 +51,28 @@ class Variable(sp.Symbol):
             outputStr = outputStr + str(self.getUnits())
         return outputStr
 
-    def setMag(self, newMag):
-        """ Updates the magnitude of this Variable.
+    def setValue(self, newVal):
+        """ Updates the magnitude of this Variable. If newVal is a pint quantity, it will first be converted
+            to this Variable's unit system. Call convert_to to change the unit system
             Input: newValue as an int, float, or pint quantity """
         # Ensure value is an int, float, or pint quantity.
-        if isinstance(newMag, int):
+        if isinstance(newVal, int):
             # Transfer value to instance variable
-            newMag = float(newMag)
-            self._mag = newMag
+            newVal = float(newVal)
+            self._mag = newVal
             self._magKnown = True
-        elif isinstance(newMag, float):
-            self._mag = newMag
+        elif isinstance(newVal, float):
+            self._mag = newVal
             self._magKnown = True
         else:
             # See if it is a quantity. We have to do it within a statement such as this for similar reasons as
             # self.setUnits
             try:
-                newMagAsQty = ureg.Quantity(newMag.magnitude, newMag.units)
+                newMagAsQty = ureg.Quantity(newVal.magnitude, newVal.units)
                 # First convert our value
-                self.convert_to(newMag.units)
+                newMagAsQty.ito(self._units)
                 # Now change the magnitude
-                self.setMag(newMag.magnitude)
+                self.setValue(newMagAsQty.magnitude)
             except:
                 raise ValueError("Input must be of type 'int', 'float', or 'ureg.Quantity'")
 
@@ -101,9 +100,10 @@ class Variable(sp.Symbol):
             raise ValueError("Inputs already declared for this Variable. Use method convert_to to change unit systems")
 
     def convert_to(self, newUnits: ureg.Unit):
-        """ Converts this quantity to the given unit system if it is allowable"""
-        newQuantity = self.getPintQuantity().to(newUnits)
-        self.setMag(newQuantity.magnitude)
+        """ Converts this Variable to the given unit system if it is allowable"""
+        oldQuantity = self.getPintQuantity()
+        newQuantity = oldQuantity.to(newUnits)
+        self.setValue(newQuantity.magnitude)
         self._units = newQuantity.units
 
     def setDesc(self, newDesc: str):
@@ -151,5 +151,5 @@ class Variable(sp.Symbol):
     def clearValue(self):
         """ Resets magnitude to be 0, marks the magnitude as unknown. The variable will retain the same
         dimensionality! """
-        self.setMag(0)
+        self.setValue(0)
         self._magKnown = False
