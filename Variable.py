@@ -16,7 +16,6 @@ class Variable(sp.Symbol):
         obj._mag = 0
         obj._magKnown = False
         obj._units = ureg.dimensionless
-        obj._unitsKnown = False
         obj._setUnits(units)
         obj.symbol = symRep
         obj._desc = ""
@@ -44,12 +43,10 @@ class Variable(sp.Symbol):
     def getVarValueStr(self):
         """ Returns a string representation of this variable and its value """
         outputStr = self.getSymRep()
-        if self._magKnown or self._unitsKnown:
-            outputStr = outputStr + " = "
+        outputStr = outputStr + " = "
         if self._magKnown:
             outputStr = outputStr + str(self.getMag()) + " "
-        if self._unitsKnown:
-            outputStr = outputStr + str(self.getUnits())
+        outputStr = outputStr + str(self.getUnits())
         return outputStr
 
     def setValue(self, newVal):
@@ -81,28 +78,27 @@ class Variable(sp.Symbol):
         """ Sets the unit type of this Variable. This can only be done once! If you desire to change the unit system
             this variable is in, use Variable.convert_to(ureg.Unit)
             Input: newUnits as a pint ureg.Unit"""
-        if self._unitsKnown == False:
-            # Ensure value is a pint Unit
-            # We first have to convert to a testQuantity, and then get the units from that. This is necessary because of
-            # some Python quirk that won't recognize the unit as being an instance of ureg.Unit because it was imported
-            # from a separate module
-            try:
-                testQuantity = ureg.Quantity(1, units)
-            except TypeError:
-                raise ValueError("Input must be of type 'ureg.Unit'")
+        # Ensure value is a pint Unit
+        # We first have to convert to a testQuantity, and then get the units from that. This is necessary because of
+        # some Python quirk that won't recognize the unit as being an instance of ureg.Unit because it was imported
+        # from a separate module
+        try:
+            testQuantity = ureg.Quantity(1, units)
+        except TypeError:
+            raise ValueError("Input must be of type 'ureg.Unit'")
 
-            if isinstance(testQuantity.units, ureg.Unit):
-                # Transfer value to instance variable
-                self._units = units
-                self._unitsKnown = True
-            else:
-                raise ValueError("Input must be of type 'ureg.Unit'")
+        if isinstance(testQuantity.units, ureg.Unit):
+            # Transfer value to instance variable
+            self._units = units
         else:
-            raise ValueError("Inputs already declared for this Variable. Use method convert_to to change unit systems")
+            raise ValueError(f"Input must be of type 'ureg.Unit', received {type(units)}")
 
     def convert_to(self, newUnits: ureg.Unit):
         """ Converts this Variable to the given unit system if it is allowable"""
-        oldQuantity = self.getPintQuantity()
+        if self._magKnown:
+            oldQuantity = self.getPintQuantity()
+        else:
+            oldQuantity = 0 * self._units
         newQuantity = oldQuantity.to(newUnits)
         self.setValue(newQuantity.magnitude)
         self._units = newQuantity.units
@@ -118,7 +114,7 @@ class Variable(sp.Symbol):
 
     def pintQtyKnown(self):
         """ Returns true if this Variable has a Pint quantity associated with it"""
-        if self._magKnown and self._unitsKnown:
+        if self._magKnown:
             return True
         else:
             return False
@@ -132,10 +128,7 @@ class Variable(sp.Symbol):
 
     def getUnits(self):
         """ Returns units as a ureg.Unit"""
-        if self._unitsKnown:
-            return self._units
-        else:
-            raise Exception("This Variable does not have units assigned to it.")
+        return self._units
 
     def getPintQuantity(self):
         """ Returns the pint Quantity of this Variable"""
