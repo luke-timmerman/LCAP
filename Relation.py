@@ -15,13 +15,13 @@ class Relation:
         """ Input: varList: list of every Variable object in equality
                    symExpr: sp.Equality of the relation,
                    static: boolean describing if relation can be solved with the parameters given
-                        in the Relation definition , default False,
+                        in the Relation definition , default True,
                    desc: string describing this relation. """
         self._varList = []
         self._symEq = sp.Eq(0, 0)
         self._setVarList(varList)
         self._setEq(symEq)
-        self._static = False
+        self._static = True
         self._desc = ""
 
         for argIndex in range(len(args)):
