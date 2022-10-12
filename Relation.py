@@ -107,20 +107,28 @@ class Relation:
         """ Returns a Sympy Expression representation of this Relations Sympy equality"""
         return self._symEq.lhs - self._symEq.rhs
 
-    def solveAuto(self, verbose=True):
-        """ Solves the sympy Equation using the Variables originally inputted in this Relation's construction"""
-        self.solve(self._varList)
-
-    def solve(self, varList: List[Variable], verbose=True, guess=.1):
-        """ Given a list of Variables, determines the 1 unknown Variable, solves for
-            it, and updates the Variable value. All variables, including the 1 unknown variable,
-            need to have Pint units.
+    def autoSolve(self, verbose=True, guess =.1):
+        """ Solves in Place the sympy Equation using the Variables originally inputted in this Relation's construction.
             Input:
                 varList: list of Variables
                 verbose: boolean, determines if solving process is outputted to screen
                 guess: Value passed to the interior fsolve equation. Usually can ignore this,
-                    but is available here for testing purposes.
-            """
+                       but is available here for testing purposes.
+        """
+        self.solveInPlace(self._varList, verbose=verbose, guess=guess)
+
+    def solve(self, varList: List[Variable], inPlace=False, verbose=True, guess=.1):
+        """ Given a list of Variables, determines the 1 unknown Variable and solves for
+            it. If inPlace is True, the unknown variable will have its value updated in place.
+            All variables, including the 1 unknown variable, need to have Pint units.
+            Input:
+                varList: list of Variables
+                inPlace: boolean, if true, unknown Variable will be directly changed in place. If false,
+                         will return the value and change none of the input Variables
+                verbose: boolean, determines if solving process is outputted to screen
+                guess: Value passed to the interior fsolve equation. Usually can ignore this,
+                       but is available here for testing purposes.
+        """
         if len(varList) != len(self._varList):
             raise Exception("Given varList has different size than this Relation's varList")
 
@@ -160,10 +168,31 @@ class Relation:
         unknownVarPintQty.ito(unknownVarUnits)
 
         # Assign new value to variable
-        unknownList[0].setValue(unknownVarPintQty.magnitude)
-        unknownList[0].convert_to(unknownVarPintQty.units)
+        returnVar = Variable(unknownList[0].getSymRep(), unknownVarPintQty.units, unknownVarPintQty.magnitude,
+                             unknownList[0].getDesc())
 
-        # Print off final value
-        print(f"{unknownList[0]}")
+        # Print if verbose
+        if verbose:
+            print(returnVar.getVarValueStr())
+
+        # Update var value if inPlace
+        if inPlace:
+            unknownList[0].setMag(unknownVarPintQty.magnitude)
+            unknownList[0].convert_to(unknownVarPintQty.units)
+
+        # Return final Variable
+        return Variable
+
+    def solveInPlace(self, varList: List[Variable], verbose=True, guess=.1):
+        """ Solves the relation for the given variables, automatically finding the unknown, but instead of returning
+            values, updates the Variable value in place
+            Input:
+                varList: list of Variables
+                verbose: boolean, determines if solving process is outputted to screen
+                guess: Value passed to the interior fsolve equation. Usually can ignore this,
+                       but is available here for testing purposes.
+        """
+        # Determine unknown variable exactly as how we did in the solve method
+
 
 
