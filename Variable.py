@@ -41,7 +41,8 @@ class Variable(sp.Symbol):
 
         return obj
 
-    def __str__(self):
+    def getVarValueStr(self):
+        """ Returns a string representation of this variable and its value """
         outputStr = self.getSymRep()
         if self._magKnown or self._unitsKnown:
             outputStr = outputStr + " = "
