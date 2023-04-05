@@ -37,41 +37,6 @@ import inspect
 #print(M2)
 
 
-M1 = 2.5
-p1 = 1 * ureg.atm
-T1 = 300 * ureg.kelvin
-gamma = 1.4
+print("HI")
 
-
-thetaSym, betaSym, MSym, gammaSym = sp.symbols('theta Beta M_1 gamma')
-btm = sp.Eq(sp.tan(thetaSym), 2*(1/sp.tan(betaSym))*(MSym**2 * sp.sin(betaSym)**2 -1)/(MSym**2 * (gammaSym+sp.cos(2*betaSym))+2))
-btmExpr = btm.rhs - btm.lhs
-#btmExpr = btmExpr.subs([(thetaSym, theta), (MSym, M1), (gammaSym, gamma)])
-#btmF = sp.lambdify(betaSym, btmExpr, "numpy")
-#beta = fsolve(btmF, .1)[0] * ureg.rad
-
-# Invert the expr
-btmExprInv = btmExpr * -1
-sp.pprint(btmExprInv)
-# Subs in values
-btmExprInv = btmExprInv.subs([(MSym, M1), (gammaSym, gamma)])
-sp.pprint(btmExprInv)
-# Solve for Beta
-btmExprInv_theta = sp.solve(btmExprInv, thetaSym)[0]
-sp.pprint(btmExprInv_theta)
-
-btmF = sp.lambdify(betaSym, btmExprInv_theta * -1, "numpy")
-print(btmF)
-# Find minimum
-print(inspect.getsource(btmF))
-print(fmin(btmF, 1))
-
-xList = np.linspace(0,2,100)
-yList = btmF(xList) * -1
-# Initialize plotter
-figure, axis = plt.subplots()
-plt.plot(xList, yList)
-plt.show()
-
-
-#TEST comment
+# We're on the branch!
